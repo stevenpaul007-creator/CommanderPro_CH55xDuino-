@@ -51,8 +51,8 @@ CH55xDuino uses decimal pin names: `P3.4` is `34`, `P1.5` is `15`, etc.
 
 | Function | CH552 pin | CH55xDuino number | Notes |
 |---|---:|---:|---|
-| Fan1 PWM | P3.4 | 34 | hardware PWM2 |
-| Fan2 PWM | P1.5 | 15 | hardware PWM1 |
+| Fan1 PWM | P1.5 | 15 | hardware PWM1 |
+| Fan2 PWM | P3.4 | 34 | hardware PWM2 |
 | Fan1 tach | P3.2 | 32 | INT0 |
 | Fan2 tach | P3.3 | 33 | INT1 |
 
