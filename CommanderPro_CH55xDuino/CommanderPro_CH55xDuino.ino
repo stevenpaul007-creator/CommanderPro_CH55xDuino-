@@ -93,8 +93,8 @@
 #define FAN_COUNT_LOGICAL 6
 #define TACH_PULSES_PER_REV 2UL
 
-#define FAN1_PWM_PIN 34  // P3.4, CH55xDuino hardware PWM2
-#define FAN2_PWM_PIN 15  // P1.5, CH55xDuino hardware PWM1
+#define FAN1_PWM_PIN 15  // P1.5, CH55xDuino hardware PWM1
+#define FAN2_PWM_PIN 34  // P3.4, CH55xDuino hardware PWM2
 #define FAN1_TACH_PIN 32 // P3.2
 #define FAN2_TACH_PIN 33 // P3.3
 

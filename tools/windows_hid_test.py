@@ -30,9 +30,16 @@ CMD_GET_TEMP = 0x11
 CMD_GET_VOLTS = 0x12
 CMD_GET_FAN_MODES = 0x20
 CMD_GET_FAN_RPM = 0x21
+CMD_GET_FAN_PWM = 0x22
 CMD_SET_FAN_DUTY = 0x23
+CMD_SET_FAN_TARGET = 0x24
 CMD_SET_FAN_PROFILE = 0x25
 CMD_SET_FAN_MODE = 0x28
+CMD_LED_COMMIT = 0x33
+CMD_BEGIN_LED_EFFECT = 0x34
+CMD_LED_EFFECT = 0x35
+CMD_RESET_LED_CHANNEL = 0x37
+CMD_SET_LED_CHANNEL_STATE = 0x38
 
 FAN_MODE_DISCONNECTED = 0x00
 FAN_MODE_DC = 0x01
@@ -139,6 +146,10 @@ def cmd_info(args):
         print(f"Firmware: {fw[1]}.{fw[2]}.{fw[3]}  raw={fw.hex(' ')}")
         print(f"Bootloader: {bl[1]}.{bl[2]}  raw={bl.hex(' ')}")
         print(f"Temp probes connected bytes: {list(temps[1:5])}  raw={temps.hex(' ')}")
+        for idx, connected in enumerate(temps[1:5], start=1):
+            if connected:
+                temp = dev.exchange(CMD_GET_TEMP, bytes([idx - 1]))
+                print(f"Temp{idx}: {be16(temp, 1) / 100:.2f} C  raw={temp.hex(' ')}")
     finally:
         dev.close()
 
@@ -205,6 +216,23 @@ def cmd_poll(args):
         dev.close()
 
 
+def cmd_led_noop(args):
+    dev = open_device(args)
+    try:
+        tests = [
+            (CMD_RESET_LED_CHANNEL, bytes([args.channel])),
+            (CMD_BEGIN_LED_EFFECT, bytes([args.channel])),
+            (CMD_SET_LED_CHANNEL_STATE, bytes([args.channel, 1])),
+            (CMD_LED_EFFECT, bytes([args.channel, 0, 0, 0, 0])),
+            (CMD_LED_COMMIT, bytes([0xff])),
+        ]
+        for cmd, payload in tests:
+            res = dev.exchange(cmd, payload)
+            print(f"LED no-op cmd 0x{cmd:02x}: status={res[0]} raw={res.hex(' ')}")
+    finally:
+        dev.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Test CH552 Commander Pro compatible HID firmware")
     parser.add_argument("--index", type=int, default=0, help="matching HID device index")
@@ -239,6 +267,10 @@ def main():
     p.add_argument("--percent", type=int, choices=range(0, 101), metavar="0..100")
     p.add_argument("--interval", type=float, default=1.0)
     p.set_defaults(func=cmd_poll)
+
+    p = sub.add_parser("led-noop", help="exercise LED no-op compatibility commands")
+    p.add_argument("--channel", type=int, default=0)
+    p.set_defaults(func=cmd_led_noop)
 
     args = parser.parse_args()
     args.func(args)

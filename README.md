@@ -51,8 +51,8 @@ CH55xDuino uses decimal pin names: `P3.4` is `34`, `P1.5` is `15`, etc.
 
 | Function | CH552 pin | CH55xDuino number | Notes |
 |---|---:|---:|---|
-| Fan1 PWM | P3.4 | 34 | hardware PWM2 |
-| Fan2 PWM | P1.5 | 15 | hardware PWM1 |
+| Fan1 PWM | P1.5 | 15 | hardware PWM1 |
+| Fan2 PWM | P3.4 | 34 | hardware PWM2 |
 | Fan1 tach | P3.2 | 32 | INT0 |
 | Fan2 tach | P3.3 | 33 | INT1 |
 
@@ -161,10 +161,10 @@ Implemented commands:
 
 | Command | Function |
 |---:|---|
-| `0x02` | firmware version `1.0.0` |
+| `0x02` | firmware version, returned as three bytes for host display like `major.minor.patch` |
 | `0x06` | bootloader version `0.1` |
-| `0x10` | temperature sensor connection status, all disconnected |
-| `0x11` | dummy temperature, 25.00 C |
+| `0x10` | dummy temperature sensor connection status, all four reported present |
+| `0x11` | dummy temperature, 25.00 C; no real thermistor hardware is read |
 | `0x12` | dummy rails, 12 V / 5 V / 3.3 V |
 | `0x20` | fan modes; fan1/fan2 are 4-pin PWM, fan3..fan6 disconnected |
 | `0x21` | fan RPM, big-endian response bytes 1..2 |
@@ -173,13 +173,20 @@ Implemented commands:
 | `0x24` | accept target-RPM write for Linux hwmon compatibility |
 | `0x25` | accept profile frame for compatibility; no curve control loop yet |
 | `0x28` | set fan mode |
+| `0x33` | accept LED commit as a no-op |
+| `0x34` | accept begin LED effect as a no-op |
+| `0x35` | accept LED effect data as a no-op |
+| `0x37` | accept reset LED channel as a no-op |
+| `0x38` | accept set LED channel state as a no-op |
 
 ## Known current behavior
 
 - HID enumeration works on Windows and Linux.
 - Linux `corsair-cpro` can bind and expose `sensors` readings.
+- USB serial is spoofed as a Commander-Pro-like string (`CPRO00000001`).
 - Voltage readings are fixed dummy values.
-- Temperature sensors are reported disconnected.
+- Temperature sensors are reported present but return fixed dummy values.
+- LED/lighting commands return success but do not drive real LEDs.
 - Only fan1/fan2 are real hardware channels.
 - RPM depends on tach wiring and pull-up; many fan tach outputs need a pull-up.
 
