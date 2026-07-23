@@ -51,8 +51,8 @@ CH55xDuino uses decimal pin names: `P3.4` is `34`, `P1.5` is `15`, etc.
 
 | Function | CH552 pin | CH55xDuino number | Notes |
 |---|---:|---:|---|
-| Fan1 PWM | P1.5 | 15 | hardware PWM1 |
-| Fan2 PWM | P3.4 | 34 | hardware PWM2 |
+| Fan1 PWM | P3.4 | 34 | hardware PWM2 |
+| Fan2 PWM | P1.5 | 15 | hardware PWM1 |
 | Fan1 tach | P3.2 | 32 | INT0 |
 | Fan2 tach | P3.3 | 33 | INT1 |
 
@@ -133,8 +133,35 @@ py windows_hid_test.py list
 py windows_hid_test.py info
 py windows_hid_test.py modes
 py windows_hid_test.py rpm 1
+py windows_hid_test.py pwm 1
 py windows_hid_test.py duty 1 60
 py windows_hid_test.py poll --fan 1 --interval 1
+```
+
+Common test commands:
+
+| Command | Purpose |
+|---|---|
+| `py windows_hid_test.py list` | list matching `VID_1B1C&PID_0C10` HID devices |
+| `py windows_hid_test.py info` | read firmware, bootloader, and dummy temperature channels |
+| `py windows_hid_test.py modes` | read the six logical Commander Pro fan modes |
+| `py windows_hid_test.py rpm 1` | read fan1 RPM |
+| `py windows_hid_test.py pwm 1` | read fan1 current fixed PWM duty percent via command `0x22` |
+| `py windows_hid_test.py duty 1 60` | set fan1 fixed PWM duty to 60% via command `0x23` |
+| `py windows_hid_test.py poll --fan 1 --interval 1` | poll fan1 RPM once per second |
+| `py windows_hid_test.py led-noop` | exercise LED compatibility no-op commands |
+
+Example PWM readback flow:
+
+```powershell
+py windows_hid_test.py duty 1 70
+py windows_hid_test.py pwm 1
+```
+
+Expected readback:
+
+```text
+fan1: 70% PWM
 ```
 
 Windows device check:

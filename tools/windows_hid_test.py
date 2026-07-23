@@ -174,6 +174,19 @@ def cmd_rpm(args):
         dev.close()
 
 
+def cmd_pwm(args):
+    dev = open_device(args)
+    try:
+        res = dev.exchange(CMD_GET_FAN_PWM, bytes([args.fan - 1]))
+        status = res[0]
+        if status == 0:
+            print(f"fan{args.fan}: {res[1]}% PWM  raw={res.hex(' ')}")
+        else:
+            print(f"fan{args.fan}: error status=0x{status:02x}  raw={res.hex(' ')}")
+    finally:
+        dev.close()
+
+
 def cmd_duty(args):
     dev = open_device(args)
     try:
@@ -251,6 +264,10 @@ def main():
     p = sub.add_parser("rpm", help="read fan RPM")
     p.add_argument("fan", type=int, choices=[1, 2])
     p.set_defaults(func=cmd_rpm)
+
+    p = sub.add_parser("pwm", help="read current fan PWM duty percent")
+    p.add_argument("fan", type=int, choices=[1, 2])
+    p.set_defaults(func=cmd_pwm)
 
     p = sub.add_parser("duty", help="set fan duty percent")
     p.add_argument("fan", type=int, choices=[1, 2])
