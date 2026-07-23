@@ -110,6 +110,20 @@
 #define CPRO_CMD_SET_FAN_TARGET  0x24
 #define CPRO_CMD_SET_FAN_PROFILE 0x25
 #define CPRO_CMD_SET_FAN_MODE    0x28
+#define CPRO_CMD_LED_COMMIT      0x33
+#define CPRO_CMD_BEGIN_LED_EFFECT 0x34
+#define CPRO_CMD_LED_EFFECT      0x35
+#define CPRO_CMD_RESET_LED_CHANNEL 0x37
+#define CPRO_CMD_SET_LED_CHANNEL_STATE 0x38
+
+// Plausible Commander Pro identity values for host software that displays or
+// keys devices by firmware version and serial number.  The firmware response is
+// formatted by host tools as "major.minor.patch".
+#define CPRO_FW_MAJOR 1
+#define CPRO_FW_MINOR 0
+#define CPRO_FW_PATCH 0
+#define CPRO_BL_MAJOR 0
+#define CPRO_BL_MINOR 1
 
 #define CPRO_FAN_MODE_DISCONNECTED 0x00
 #define CPRO_FAN_MODE_DC           0x01
@@ -184,7 +198,7 @@ __code uint16_t ProductDescriptor[] = {
   ((13 + 1) * 2) | (0x03 << 8), 'C','o','m','m','a','n','d','e','r',' ','P','r','o'
 };
 __code uint16_t SerialDescriptor[] = {
-  ((5 + 1) * 2) | (0x03 << 8), 'C','H','5','5','2'
+  ((12 + 1) * 2) | (0x03 << 8), 'C','P','R','O','0','0','0','8','9','7','5','7'
 };
 
 static void put_be16(uint8_t *p, uint16_t value) {
@@ -228,16 +242,20 @@ static void handleCommanderFrame(__xdata uint8_t *outFrame) {
 
   switch (cmd) {
     case CPRO_CMD_GET_FIRMWARE:
-      resp[1] = 1; resp[2] = 0; resp[3] = 0;
+      resp[1] = CPRO_FW_MAJOR; resp[2] = CPRO_FW_MINOR; resp[3] = CPRO_FW_PATCH;
       break;
     case CPRO_CMD_GET_BOOTLOADER:
-      resp[1] = 0; resp[2] = 1;
+      resp[1] = CPRO_BL_MAJOR; resp[2] = CPRO_BL_MINOR;
       break;
     case CPRO_CMD_GET_TEMP_CONFIG:
-      resp[1] = resp[2] = resp[3] = resp[4] = 0;
+      // Dummy temperature support: report all four Commander Pro thermistor
+      // channels as present so host software can exercise GET_TEMP, but return
+      // a fixed value below instead of reading real sensors.
+      resp[1] = resp[2] = resp[3] = resp[4] = 1;
       break;
     case CPRO_CMD_GET_TEMP:
-      put_be16(&resp[1], 2500); // 25.00 C dummy
+      if (outFrame[1] < 4) put_be16(&resp[1], 2500); // 25.00 C dummy
+      else resp[0] = 0x10;
       break;
     case CPRO_CMD_GET_VOLTS:
       if (outFrame[1] == 0) put_be16(&resp[1], 12000);
@@ -269,6 +287,15 @@ static void handleCommanderFrame(__xdata uint8_t *outFrame) {
         fanMode[outFrame[2]] = outFrame[3];
         if (fanMode[outFrame[2]] == CPRO_FAN_MODE_DISCONNECTED) setFanDuty(outFrame[2], 0);
       }
+      break;
+    case CPRO_CMD_LED_COMMIT:
+    case CPRO_CMD_BEGIN_LED_EFFECT:
+    case CPRO_CMD_LED_EFFECT:
+    case CPRO_CMD_RESET_LED_CHANNEL:
+    case CPRO_CMD_SET_LED_CHANNEL_STATE:
+      // Lighting is intentionally not implemented on this 2-fan board.  Return
+      // success so iCUE/FanControl-style initialization paths that touch LED
+      // channels do not reject the device for an unsupported command.
       break;
     default:
       resp[0] = 0x01;
